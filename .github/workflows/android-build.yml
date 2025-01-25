@@ -1,0 +1,43 @@
+name: Build APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      # Step 3: Install Buildozer and Android dependencies
+      - name: Install Buildozer and dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.36
+
+      # Step 4: Build APK
+      - name: Build APK
+        run: |
+          buildozer android debug
+        env:
+          ANDROID_SDK_ROOT: ${{ secrets.ANDROID_SDK_ROOT }}
+
+      # Step 5: Upload APK as an artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: MyApp-APK
+          path: bin/*.apk
