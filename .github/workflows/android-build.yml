@@ -52,7 +52,9 @@ jobs:
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          if [ ! -f "$ANDROID_SDK_ROOT/platform-tools/aidl" ]; then
+          # Ensure AIDL tool is installed and in the correct path
+          sdkmanager --list | grep "aidl"
+          if [ ! -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/aidl" ]; then
             echo "AIDL tool is missing!"
             exit 1
           fi
