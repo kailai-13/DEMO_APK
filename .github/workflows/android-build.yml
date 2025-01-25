@@ -17,6 +17,9 @@ jobs:
         echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
       shell: bash
 
+    - name: Clear Docker cache
+      run: docker builder prune -f
+
     - name: Accept Android SDK license agreements
       run: yes | sdkmanager --licenses
 
