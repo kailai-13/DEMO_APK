@@ -1,73 +1,42 @@
 name: CI
-
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
-      # Step 1: Checkout the code
-      - uses: actions/checkout@v2
+uses: actions/checkout@v2
 
-      # Step 2: Get the current date
-      - name: Get Date
+      used to cache dependencies with a timeout
+name: Get Date
         id: get-date
-        run: echo "date=$(date -u '+%Y%m%d')" >> $GITHUB_ENV
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+        shell: bash
 
-      # Step 3: Cache Buildozer global directory
-      - name: Cache Buildozer global directory
+name: Cache Buildozer global directory
         uses: actions/cache@v2
         with:
           path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
 
-      # Step 4: Cache Buildozer local directory
-      - uses: actions/cache@v2
+uses: actions/cache@v2
         with:
           path: .buildozer
-          key: ${{ runner.os }}-${{ env.date }}-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
 
-      # Step 5: Install Android SDK and dependencies
-      - name: Install Android SDK and dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip zlib1g-dev
-          python3 -m pip install --upgrade pip
-          python3 -m pip install buildozer cython==0.29.36 python-for-android
-
-          # Install Android SDK tools
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-
-          # Set environment variables
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-
-          # Accept licenses and install required SDK components
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
-
-      # Step 6: Clean Buildozer environment
-      - name: Clean Buildozer environment
-        run: |
-          rm -rf .buildozer
-          rm -rf $HOME/.buildozer
-
-      # Step 7: Build APK with Buildozer
-      - name: Build APK with Buildozer
-        run: |
-          echo 'y' | buildozer android debug
-
-      # Step 8: Upload APK as an artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          name: MyApp-APK
-          path: bin/*.apk
+          command: buildozer android debug
+          buildozer_version: stable
+
+name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
