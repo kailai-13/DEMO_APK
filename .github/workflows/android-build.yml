@@ -50,15 +50,13 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
 
-
-      - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses
+      - name: Accept Android SDK license agreements
+        run: yes | sdkmanager --licenses
 
       # Step 6: Build APK with Buildozer (with 'yes')
       - name: Build APK with Buildozer
         run: |
-          yes | buildozer android debug
+          buildozer android debug
       # Step 7: Upload APK as an artifact
       - name: Upload APK
         uses: actions/upload-artifact@v3
