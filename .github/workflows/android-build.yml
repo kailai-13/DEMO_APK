@@ -52,10 +52,13 @@ jobs:
 
       - name: Accept Android SDK license agreements
         run: |
-          while yes | sdkmanager --licenses; do
-            echo "Accepted all licenses."
-            break
-          done
+          sdkmanager --licenses <<EOF
+          y
+          y
+          y
+          y
+          EOF
+
 
 
       # Step 6: Build APK with Buildozer (with 'yes')
