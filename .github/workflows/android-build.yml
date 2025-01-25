@@ -52,19 +52,18 @@ jobs:
 
       - name: Accept Android SDK license agreements
         run: |
-          sdkmanager --licenses <<EOF
-          y
-          y
-          y
-          y
-          EOF
+          while yes | sdkmanager --licenses; do
+            echo "Accepted all licenses."
+            break
+          done
 
 
-
-      # Step 6: Build APK with Buildozer (with 'yes')
       - name: Build APK with Buildozer
         run: |
-          buildozer android debug
+          export SDKMANAGER_OPTS="--licenses"
+          export USE_SDKMANAGER_WRAPPER=true
+          buildozer --verbose android debug
+
       # Step 7: Upload APK as an artifact
       - name: Upload APK
         uses: actions/upload-artifact@v3
