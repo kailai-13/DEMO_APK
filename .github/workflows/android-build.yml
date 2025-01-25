@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -24,42 +24,49 @@ jobs:
       - name: Install Buildozer and dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip
+          sudo apt install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip zlib1g-dev
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # Step 4: Install Android Command-Line Tools
+      # Step 4: Download and Install Android Command-Line Tools
       - name: Install Android SDK and Tools
         run: |
-          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
+          # Set up SDK folder
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+
+          # Download and install command-line tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          sudo unzip cmdline-tools.zip -d /usr/lib/android-sdk/cmdline-tools
-          sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
-          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+
+          # Add Android tools to PATH
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+
+          # Accept licenses and install required components
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "tools"
+          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404" "tools"
 
       # Step 5: Verify AIDL Installation
-      - name: Verify AIDL Tool
+      - name: Verify AIDL Installation
         run: |
-          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           if [ ! -f "$ANDROID_SDK_ROOT/platform-tools/aidl" ]; then
             echo "AIDL tool is missing!"
             exit 1
           fi
 
-      # Step 6: Build APK
+      # Step 6: Build the APK
       - name: Build APK
         run: |
-          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           buildozer android debug
         env:
-          ANDROID_SDK_ROOT: /usr/lib/android-sdk
+          ANDROID_SDK_ROOT: $HOME/android-sdk
 
-      # Step 7: Upload APK
+      # Step 7: Upload APK as an artifact
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
