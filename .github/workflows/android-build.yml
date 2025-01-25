@@ -1,75 +1,42 @@
-name: Build APK
-
+name: CI
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
-      # Step 2: Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      # used to cache dependencies with a timeout
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+        shell: bash
+
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v2
         with:
-          python-version: 3.9
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
 
-      # Step 3: Install Buildozer and dependencies
-      - name: Install Buildozer and dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip zlib1g-dev
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.36
-
-      # Step 4: Install Android SDK and Tools
-      - name: Install Android SDK and Tools
-        run: |
-          # Set up SDK folder
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-
-          # Download and install command-line tools (If not already downloaded)
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-
-          # Add Android tools to PATH
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-
-          # Install necessary SDK components
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
-
-      # Step 5: Verify the installation
-      - name: Verify AIDL Installation
-        run: |
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          # Ensure AIDL tool exists
-          if [ ! -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/aidl" ]; then
-            echo "AIDL tool is missing!"
-            exit 1
-          fi
-
-      # Step 6: Build the APK
-      - name: Build APK
-        run: |
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          buildozer android debug
-        env:
-          ANDROID_SDK_ROOT: $HOME/android-sdk
-
-      # Step 7: Upload APK as an artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+      - uses: actions/cache@v2
         with:
-          name: MyApp-APK
-          path: bin/*.apk
+          path: .buildozer
+          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
+
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: master
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
