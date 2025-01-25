@@ -28,7 +28,7 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # Step 4: Install Android SDK tools
+      # Step 4: Install Android SDK and Tools
       - name: Install Android SDK and Tools
         run: |
           # Set up SDK folder
@@ -53,4 +53,23 @@ jobs:
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           # Ensure AIDL tool exists
-          if [ ! -f "$ANDROID_SDK_ROOT
+          if [ ! -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/aidl" ]; then
+            echo "AIDL tool is missing!"
+            exit 1
+          fi
+
+      # Step 6: Build the APK
+      - name: Build APK
+        run: |
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          buildozer android debug
+        env:
+          ANDROID_SDK_ROOT: $HOME/android-sdk
+
+      # Step 7: Upload APK as an artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: MyApp-APK
+          path: bin/*.apk
