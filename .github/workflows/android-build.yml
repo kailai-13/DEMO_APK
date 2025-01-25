@@ -45,15 +45,19 @@ jobs:
 
           # Accept licenses and install required components
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404" "tools"
+          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404" "tools" "cmdline-tools"
 
-      # Step 5: Verify AIDL Installation
+      # Step 5: Verify SDK Components and AIDL Installation
       - name: Verify AIDL Installation
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          # Check for AIDL tool directly by listing installed SDK tools
-          if ! sdkmanager --list | grep -q "aidl"; then
+          
+          # Ensure SDK is installed and tools are available
+          sdkmanager --list
+
+          # Check for AIDL tool directly by verifying the installation path
+          if [ ! -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/aidl" ]; then
             echo "AIDL tool is missing!"
             exit 1
           fi
