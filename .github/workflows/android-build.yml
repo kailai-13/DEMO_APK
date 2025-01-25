@@ -28,27 +28,38 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      # Step 4: Install Android SDK Components
-      - name: Install Android SDK
+      # Step 4: Install Android Command-Line Tools
+      - name: Install Android SDK and Tools
         run: |
-          sudo apt install -y wget
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           sudo unzip cmdline-tools.zip -d /usr/lib/android-sdk/cmdline-tools
           sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
           export ANDROID_SDK_ROOT=/usr/lib/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "tools"
 
-      # Step 5: Build APK
+      # Step 5: Verify AIDL Installation
+      - name: Verify AIDL Tool
+        run: |
+          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          if [ ! -f "$ANDROID_SDK_ROOT/platform-tools/aidl" ]; then
+            echo "AIDL tool is missing!"
+            exit 1
+          fi
+
+      # Step 6: Build APK
       - name: Build APK
         run: |
+          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           buildozer android debug
         env:
           ANDROID_SDK_ROOT: /usr/lib/android-sdk
 
-      # Step 6: Upload APK as an artifact
+      # Step 7: Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
