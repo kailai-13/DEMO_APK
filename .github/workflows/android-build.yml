@@ -13,12 +13,12 @@ jobs:
       # Step 1: Checkout the code
       - uses: actions/checkout@v2
 
-      # Step 2: Get the current date (using GITHUB_ENV for compatibility)
+      # Step 2: Get the current date
       - name: Get Date
         id: get-date
         run: echo "date=$(date -u '+%Y%m%d')" >> $GITHUB_ENV
 
-      # Step 3: Cache Buildozer's global directory
+      # Step 3: Cache Buildozer global directory
       - name: Cache Buildozer global directory
         uses: actions/cache@v2
         with:
@@ -34,33 +34,27 @@ jobs:
       # Step 5: Install Android SDK and dependencies
       - name: Install Android SDK and dependencies
         run: |
-          # Update and install required packages
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip zlib1g-dev
-          
-          # Upgrade pip and install Buildozer
           python3 -m pip install --upgrade pip
           python3 -m pip install buildozer cython==0.29.36
 
-          # Set up Android SDK environment
+          # Install Android SDK tools
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
 
-          # Download and install Android SDK Command Line Tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
           mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
 
-          # Update PATH
+          # Set environment variables
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          
-          # Accept all licenses
-          yes | sdkmanager --licenses
 
-          # Install required Android SDK components
+          # Accept licenses and install required SDK components
+          yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
 
-      # Step 6: Build APK with Buildozer
+      # Step 6: Build APK with Buildozer (with 'yes')
       - name: Build APK with Buildozer
         run: |
           yes | buildozer android debug
