@@ -51,7 +51,12 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
 
       - name: Accept Android SDK license agreements
-        run: yes | sdkmanager --licenses
+        run: |
+          while yes | sdkmanager --licenses; do
+            echo "Accepted all licenses."
+            break
+          done
+
 
       # Step 6: Build APK with Buildozer (with 'yes')
       - name: Build APK with Buildozer
