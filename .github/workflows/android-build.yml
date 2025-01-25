@@ -37,7 +37,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev python3-dev python3-venv openjdk-11-jdk unzip zlib1g-dev
           python3 -m pip install --upgrade pip
-          python3 -m pip install buildozer cython==0.29.36
+          python3 -m pip install buildozer cython==0.29.36 python-for-android
 
           # Install Android SDK tools
           export ANDROID_SDK_ROOT=$HOME/android-sdk
@@ -54,13 +54,18 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
 
-      # Step 6: Clean and Build APK with Buildozer
-      - name: Clean and Build APK
+      # Step 6: Clean Buildozer environment
+      - name: Clean Buildozer environment
         run: |
-          buildozer android clean  # Clean any stale files
-          echo 'n' | buildozer android debug  # Automatically handle license prompts
+          rm -rf .buildozer
+          rm -rf $HOME/.buildozer
 
-      # Step 7: Upload APK as an artifact
+      # Step 7: Build APK with Buildozer
+      - name: Build APK with Buildozer
+        run: |
+          echo 'n' | buildozer android debug
+
+      # Step 8: Upload APK as an artifact
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
