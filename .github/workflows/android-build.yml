@@ -63,7 +63,7 @@ jobs:
       # Step 7: Build APK with Buildozer
       - name: Build APK with Buildozer
         run: |
-          echo 'n' | buildozer android debug
+          echo 'y' | buildozer android debug
 
       # Step 8: Upload APK as an artifact
       - name: Upload APK
